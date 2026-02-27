@@ -35,17 +35,6 @@ jobs:
           pnpm exec hexo clean
           pnpm exec hexo generate
 
-      - name: Clear Remote Public Directory
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.BLOG_SERVER_HOST }}
-          username: ${{ secrets.BLOG_SERVER_USER }}
-          key: ${{ secrets.BLOG_DEPLOY_SSH_KEY }}
-          port: ${{ secrets.BLOG_SERVER_PORT }}
-          script: |
-            mkdir -p /home/deploy/repos/personal-blog/public
-            find /home/deploy/repos/personal-blog/public -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-
       - name: Upload Static Files
         uses: appleboy/scp-action@v0.1.7
         with:
