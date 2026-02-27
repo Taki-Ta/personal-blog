@@ -1,0 +1,58 @@
+name: Deploy Blog
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-blog-production
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Static Site
+        run: |
+          pnpm exec hexo clean
+          pnpm exec hexo generate
+
+      - name: Clear Remote Public Directory
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.BLOG_SERVER_HOST }}
+          username: ${{ secrets.BLOG_SERVER_USER }}
+          key: ${{ secrets.BLOG_DEPLOY_SSH_KEY }}
+          port: ${{ secrets.BLOG_SERVER_PORT }}
+          script: |
+            mkdir -p /home/deploy/repos/personal-blog/public
+            find /home/deploy/repos/personal-blog/public -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+
+      - name: Upload Static Files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.BLOG_SERVER_HOST }}
+          username: ${{ secrets.BLOG_SERVER_USER }}
+          key: ${{ secrets.BLOG_DEPLOY_SSH_KEY }}
+          port: ${{ secrets.BLOG_SERVER_PORT }}
+          source: public/*
+          target: /home/deploy/repos/personal-blog/public
+          strip_components: 1
