@@ -98,6 +98,10 @@ ignore:
 ## Themes: https://hexo.io/themes/
 theme: redefine
 
+theme_config:
+  info:
+    author: taki
+
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
