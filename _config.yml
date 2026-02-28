@@ -101,10 +101,13 @@ theme: redefine
 theme_config:
   info:
     author: taki
-
+  articles:
+    copyright:
+      enable: false
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
   type: ''
+
 
 
