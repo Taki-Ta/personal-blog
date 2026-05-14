@@ -3,16 +3,22 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
-subtitle: ''
-description: ''
+title: Okudera
+subtitle: '个人技术博客'
+description: 'Okudera 的个人技术博客，记录技术学习、系统设计与开发实践。'
 keywords:
-author: John Doe
-language: en
+  - Okudera
+  - 技术博客
+  - 后端
+  - Docker
+  - OAuth2
+  - AI Agent
+author: taki
+language: zh-CN
 timezone: ''
 
 # URL
-## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
+## Set your site url here.
 url: https://okudera.site
 permalink: :year/:month/:day/:title/
 permalink_defaults:
@@ -100,8 +106,45 @@ theme: redefine
 
 theme_config:
   info:
+    title: Okudera
+    subtitle: 个人技术博客
     author: taki
+    url: https://okudera.site
+  defaults:
+    avatar: /images/taki.jpg
+  home_banner:
+    title: Okudera
+    subtitle:
+      text:
+        - 个人技术博客
+  global:
+    website_counter:
+      enable: false
+    open_graph:
+      enable: false
+  inject:
+    enable: true
+    head:
+      - '<style>footer .info-container > div.relative.text-center.lg\:absolute.lg\:left-\[20px\] { display: none !important; }</style>'
+  comment:
+    enable: true
+    system: giscus
+    config:
+      giscus:
+        repo: Taki-Ta/blog-comments
+        repo_id: R_kgDOSc9F7w
+        category: General
+        category_id: DIC_kwDOSc9F784C9AVM
+        mapping: pathname
+        strict: 0
+        reactions_enabled: 1
+        emit_metadata: 0
+        lang: zh-CN
+        input_position: bottom
+        loading: lazy
   articles:
+    author_label:
+      enable: false
     copyright:
       enable: false
 # Deployment
