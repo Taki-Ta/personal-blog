@@ -373,14 +373,51 @@ SQL Server 里有一个很容易忽略的点：如果表有聚集索引，非聚
 
 随机 GUID 做聚集键就要小心。它不是不能用，而是插入位置太随机，容易造成页分裂和碎片。SQL Server 里如果必须用 GUID，可以考虑 `NEWSEQUENTIALID()` 或者把 GUID 主键设为非聚集，再单独选择合适的聚集键。
 
-## 落到执行计划里看
+## 最后串一次查询过程
 
-理解这些概念之后，再看执行计划会容易很多。
+如果只看定义，聚集索引、非聚集索引和 B+ Tree 还是有点散。把它们放进一次查询里会清楚很多。
 
-看到 `Index Seek`，通常说明优化器能沿着某棵 B+ Tree 缩小范围。它不一定只读一行，但至少不是从头把整张表扫过去。
+假设 `Users` 表按 `Id` 建了聚集索引，又按 `Email` 建了非聚集索引：
 
-看到 `Index Scan` 或 `Clustered Index Scan`，说明数据库在按页扫描一段甚至整棵索引。有些 scan 是正常的，比如小表、报表、大范围查询；但如果一个本来应该很精准的查询走了 scan，就要回头看索引列顺序、统计信息和查询条件。
+```sql
+CREATE CLUSTERED INDEX CX_Users_Id
+ON Users(Id);
 
-看到 `Key Lookup`，说明非聚集索引先找到了行定位信息，但查询还需要回到聚集索引里取其他列。少量 lookup 没问题，大量 lookup 往往就是慢查询的来源之一。这时可以考虑收窄返回列，或者用 `INCLUDE` 做覆盖索引。
+CREATE NONCLUSTERED INDEX IX_Users_Email
+ON Users(Email);
+```
 
-所以索引真正改变的不是 SQL 表面写法，而是数据库为了执行这句 SQL 要读多少页、按什么顺序读、要不要来回跳着读。聚集索引、非聚集索引和 B+ Tree 最后都会落到这个问题上。
+现在查一行用户：
+
+```sql
+SELECT Id, Email, Name
+FROM Users
+WHERE Email = 'taki@example.com';
+```
+
+数据库大致会这样走：
+
+```text
+1. 去 IX_Users_Email 这棵 B+ Tree 里找 taki@example.com
+2. 在 Email 索引的叶子层拿到对应的 Id
+3. 用这个 Id 再去 CX_Users_Id 这棵 B+ Tree 里找完整数据行
+4. 返回 Id、Email、Name
+```
+
+这里三件事刚好对上：
+
+- B+ Tree 负责把“从头扫”变成“沿目录往下找”。
+- 非聚集索引负责提供一条按 `Email` 查找的路径。
+- 聚集索引负责组织真实数据行，最后从它的叶子层拿到完整记录。
+
+如果 `IX_Users_Email` 里已经包含 `Name`，第 3 步就可以省掉：
+
+```sql
+CREATE NONCLUSTERED INDEX IX_Users_Email
+ON Users(Email)
+INCLUDE (Name);
+```
+
+这时查询只读 `Email` 这棵索引就够了。索引优化很多时候就是在减少这种额外跳转：少扫一些页，少回一次表，少做一次排序。
+
+所以这篇文章真正想说明的是：索引不是一个抽象的“加速开关”。它是一套真实存在的数据结构。聚集索引决定数据行主要按什么方式放，非聚集索引提供额外查找路径，B+ Tree 则是这些路径背后的目录结构。
